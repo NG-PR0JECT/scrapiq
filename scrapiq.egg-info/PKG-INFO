@@ -1,3 +1,24 @@
+Metadata-Version: 2.4
+Name: scrapiq
+Version: 0.1.0
+Summary: Turn any URL into clean, structured JSON for LLM/RAG pipelines
+Author-email: Nathan <nathan.guyon51@gmail.com>
+License: MIT
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: fastapi>=0.110.0
+Requires-Dist: uvicorn[standard]>=0.27.0
+Requires-Dist: httpx>=0.27.0
+Requires-Dist: beautifulsoup4>=4.12.0
+Requires-Dist: pydantic>=2.5.0
+Requires-Dist: trafilatura>=1.6.0
+Provides-Extra: dev
+Requires-Dist: pytest>=8.0.0; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.23.0; extra == "dev"
+Requires-Dist: ruff>=0.1.0; extra == "dev"
+Dynamic: license-file
+
 # Scrapiq
 
 > Turn any URL into clean, structured JSON for LLM/RAG pipelines.

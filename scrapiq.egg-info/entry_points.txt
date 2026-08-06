@@ -1,0 +1,2 @@
+[console_scripts]
+scrapiq = src.main:run
