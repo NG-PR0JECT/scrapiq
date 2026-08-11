@@ -1,6 +1,7 @@
 # Scrapiq
 
 > Turn any URL into clean, structured JSON for LLM/RAG pipelines.
+> Live at: **https://scrapiq.io**
 
 Scrapiq is a lightweight, open-source HTTP API that fetches a web page and
 returns either:
@@ -13,17 +14,23 @@ returns either:
 Built for RAG ingestion, fine-tuning dataset generation, and any LLM
 pipeline that needs clean source data without HTML noise.
 
-## Quick start
+## Hosted endpoint
+
+```
+POST https://scrapiq.io/v1/extract
+```
+
+Public, no auth required for v0.1. See [Usage](#usage) below.
+
+## Quick start (self-hosted)
 
 ```bash
-# Install
 git clone https://github.com/NG-PR0JECT/scrapiq.git
 cd scrapiq
 python -m venv venv
 source venv/bin/activate
 pip install -e ".[dev]"
 
-# Run
 scrapiq              # starts on http://localhost:8001
 ```
 
@@ -32,7 +39,7 @@ scrapiq              # starts on http://localhost:8001
 ### 1. Clean markdown
 
 ```bash
-curl -X POST http://localhost:8001/v1/extract \
+curl -X POST https://scrapiq.io/v1/extract \
   -H "Content-Type: application/json" \
   -d '{
     "url": "https://example.com/article",
@@ -43,7 +50,7 @@ curl -X POST http://localhost:8001/v1/extract \
 ### 2. Structured extraction
 
 ```bash
-curl -X POST http://localhost:8001/v1/extract \
+curl -X POST https://scrapiq.io/v1/extract \
   -H "Content-Type: application/json" \
   -d '{
     "url": "https://news.ycombinator.com",
@@ -61,7 +68,7 @@ curl -X POST http://localhost:8001/v1/extract \
 ### 3. Plain text
 
 ```bash
-curl -X POST http://localhost:8001/v1/extract \
+curl -X POST https://scrapiq.io/v1/extract \
   -H "Content-Type: application/json" \
   -d '{"url": "https://example.com", "format": "text"}'
 ```
@@ -72,7 +79,7 @@ curl -X POST http://localhost:8001/v1/extract \
 import httpx
 
 response = httpx.post(
-    "http://localhost:8001/v1/extract",
+    "https://scrapiq.io/v1/extract",
     json={
         "url": "https://example.com",
         "format": "markdown",
