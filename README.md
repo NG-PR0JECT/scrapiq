@@ -123,6 +123,15 @@ infrastructure. No telemetry, no data leaves your network.
 The HTTP API is in `src/main.py`. The core extraction pipeline is in
 `src/extract.py`. Schemas are in `src/schemas.py`.
 
+## Ecosystem
+
+Official client libraries and integrations (all MIT):
+
+- [scrapiq-cli](https://github.com/NG-PR0JECT/scrapiq-cli) — dependency-free CLI (`pip install scrapiq`)
+- [scrapiq-node](https://github.com/NG-PR0JECT/scrapiq-node) — dependency-free TypeScript/Node client
+- [scrapiq-langchain-loader](https://github.com/NG-PR0JECT/scrapiq-langchain-loader) — LangChain `DocumentLoader`
+- [scrapiq-mcp-server](https://github.com/NG-PR0JECT/scrapiq-mcp-server) — MCP server for Claude/Cursor/agent tools
+
 ## License
 
 MIT — see LICENSE.
