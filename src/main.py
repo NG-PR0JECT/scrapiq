@@ -209,13 +209,18 @@ def billing_checkout(plan: str = "pro", email: str = "") -> CheckoutResponse:
     )
 
 
-@app.get("/v1/billing/confirm", response_model=ConfirmResponse, tags=["Billing"])
-def billing_confirm(plan: str = "pro", email: str = "") -> ConfirmResponse:
+@app.get("/v1/billing/confirm", tags=["Billing"])
+def billing_confirm(request: Request, plan: str = "pro", email: str = ""):
     """Stub-mode simulated checkout success — upgrades the user's plan.
 
     Only meaningful until a real Polar.sh token is configured. In production
     (token set) this endpoint returns 404 and upgrades flow via the webhook.
+
+    When the client accepts HTML (a browser), redirect back to /pricing with a
+    success flag instead of returning raw JSON.
     """
+    from fastapi.responses import RedirectResponse
+
     if plan not in PLANS or plan == "free":
         raise HTTPException(status_code=400, detail="Plan must be 'pro' or 'scale'")
     if not email:
@@ -224,6 +229,11 @@ def billing_confirm(plan: str = "pro", email: str = "") -> ConfirmResponse:
     if user is None:
         raise HTTPException(status_code=404, detail="No account for that email — sign up first")
     record_event(user["api_key"], "checkout_completed")
+
+    accept = request.headers.get("accept", "")
+    if "text/html" in accept:
+        return RedirectResponse(url="/pricing?checkout=success&plan=" + plan, status_code=303)
+
     return ConfirmResponse(plan=plan, email=email, status="active")
 
 
