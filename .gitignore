@@ -27,3 +27,10 @@ Thumbs.db
 *.log
 .cache/
 claude-cli.log
+data/
+
+# Marketing working data (contains real prospect emails — keep out of the
+# public repo; scripts/daily.md stay tracked)
+marketing/prospects.jsonl
+marketing/sent_emails.jsonl
+marketing/mailbox_state.json

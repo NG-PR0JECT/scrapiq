@@ -1,8 +1,9 @@
 """Pydantic schemas for request/response."""
 
+import re
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, Field, HttpUrl, field_validator
 
 
 class ExtractRequest(BaseModel):
@@ -68,3 +69,66 @@ class HealthResponse(BaseModel):
     status: Literal["ok", "degraded", "down"]
     version: str
     cache_size: int
+
+
+# ── Auth / billing / events ──────────────────────────────────────────────
+
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+class SignupRequest(BaseModel):
+    """Create an account / API key."""
+
+    email: str = Field(..., description="Email address to associate with the API key")
+
+    @field_validator("email")
+    @classmethod
+    def _valid_email(cls, v: str) -> str:
+        v = v.strip().lower()
+        if not _EMAIL_RE.match(v):
+            raise ValueError("Invalid email address")
+        return v
+
+
+class SignupResponse(BaseModel):
+    """Response to a signup request."""
+
+    email: str
+    api_key: str
+    plan: str
+    created_at: str
+
+
+class UsageResponse(BaseModel):
+    """Quota usage for the calling API key."""
+
+    api_key: str
+    plan: str
+    used: int
+    quota: int | None
+    date: str
+
+
+class CheckoutResponse(BaseModel):
+    """A checkout URL for upgrading to a paid plan."""
+
+    plan: str
+    email: str
+    checkout_url: str
+    provider: str
+
+
+class ConfirmResponse(BaseModel):
+    """Result of a (stub-mode) simulated checkout."""
+
+    plan: str
+    email: str
+    status: str
+
+
+class EventRequest(BaseModel):
+    """Server-side conversion/usage event."""
+
+    event_type: str = Field(..., description="e.g. signup, extract, checkout")
+    source: str | None = Field(None, description="utm_source")
+    campaign: str | None = Field(None, description="utm_campaign")
