@@ -8,6 +8,11 @@ venv/
 env/
 .env
 
+# Build artifacts
+*.egg-info/
+build/
+dist/
+
 # Tests
 .pytest_cache/
 .coverage
@@ -29,8 +34,6 @@ Thumbs.db
 claude-cli.log
 data/
 
-# Marketing working data (contains real prospect emails — keep out of the
-# public repo; scripts/daily.md stay tracked)
-marketing/prospects.jsonl
-marketing/sent_emails.jsonl
-marketing/mailbox_state.json
+# Marketing / acquisition working data — NEVER track.
+# Contains real prospect emails, outreach angles and launch copy.
+marketing/
