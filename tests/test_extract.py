@@ -1,8 +1,17 @@
 """Unit tests for the extractor — pure functions only, no HTTP."""
 
+import re
+
 import pytest
 
-from src.extract import extract_metadata, extract_structured, extract_text
+from src.extract import (
+    _in_span,
+    _inject_missing_links,
+    _protected_spans,
+    extract_metadata,
+    extract_structured,
+    extract_text,
+)
 from src.schemas import PageMetadata
 
 
@@ -130,3 +139,54 @@ class TestExtractStructured:
 def test_word_count_parametrized(html, expected_word_count):
     meta = extract_metadata(html, "http://x.com")
     assert meta.word_count == expected_word_count
+
+
+class TestLinkInjectionGuards:
+    """Regression tests: the markdown link-injection pass must never corrupt
+    links or URLs that trafilatura already produced.
+
+    Real failure (found 2026-09-12 while benchmarking 12 live pages): on
+    https://en.wikipedia.org/wiki/Retrieval-augmented_generation the navbox
+    anchors carry 1-3 char labels ("R", "e", "AI"), which the old `str.replace`
+    pass matched *inside* already-correct links and URLs, mangling 79 link
+    constructs on a single page.
+    """
+
+    def test_short_labels_do_not_corrupt_existing_link(self):
+        text = (
+            "# Retrieval-augmented generation\n\n"
+            "**Retrieval-augmented generation** (**RAG**) is a technique that enables "
+            "[large language models](https://en.wikipedia.org/wiki/Large_language_model) "
+            "to retrieve and incorporate new information.\n"
+        )
+        html = (
+            b'<nav><a href="/wiki/Template:AI">AI</a>'
+            b'<a href="/wiki/Template:R">R</a>'
+            b'<a href="/wiki/Template:Gen">e</a>'
+            b'<a href="/wiki/Template:GenAI">t</a></nav>'
+        )
+        out = _inject_missing_links(text, html)
+        assert "[large language models](https://en.wikipedia.org/wiki/Large_language_model)" in out
+        assert "_[AI](/wiki/Template:AI)" not in out
+        assert not re.search(r"\]\([^)\s]*\[", out), f"corrupted link target: {out[:200]!r}"
+        assert out == text  # nothing to inject, nothing changed
+
+    def test_long_missing_label_is_still_injected(self):
+        text = "This chapter walks you through getting started with the language."
+        html = b'<a href="https://doc.rust-lang.org/book/">getting started</a>'
+        out = _inject_missing_links(text, html)
+        assert "[getting started](https://doc.rust-lang.org/book/)" in out
+
+    def test_label_inside_bare_url_is_not_injected(self):
+        text = "See https://example.com/products/analytics for the numbers."
+        html = b'<a href="https://other.example/analy">analytics</a>'
+        out = _inject_missing_links(text, html)
+        assert out == text
+
+    def test_helpers(self):
+        text = "text [label](https://a.com/x) then https://b.com/y end"
+        spans = _protected_spans(text)
+        assert _in_span(spans, text.index("a.com"))
+        assert _in_span(spans, text.index("b.com"))
+        assert not _in_span(spans, 0)
+

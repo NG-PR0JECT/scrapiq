@@ -34,6 +34,26 @@ class ExtractionError(Exception):
     """Raised when extraction fails for any reason."""
 
 
+# --- markdown link-injection guards -----------------------------------------
+# Ranges that must never be rewritten: existing [label](url) links and bare URLs.
+_MD_LINK_RE = re.compile(r"\[[^\]]*\]\([^)]*\)")
+_BARE_URL_RE = re.compile(r"https?://\S+")
+# Labels shorter than this collide with substrings already present in URLs.
+_MIN_INJECT_LEN = 4
+
+
+def _protected_spans(text: str) -> list[tuple[int, int]]:
+    """Return (start, end) ranges of existing markdown links and bare URLs."""
+    spans = [m.span() for m in _MD_LINK_RE.finditer(text)]
+    spans += [m.span() for m in _BARE_URL_RE.finditer(text)]
+    return spans
+
+
+def _in_span(spans: list[tuple[int, int]], pos: int) -> bool:
+    """True if pos falls inside one of the protected ranges."""
+    return any(start <= pos < end for start, end in spans)
+
+
 async def fetch_url(url: str) -> tuple[bytes, str]:
     """Fetch URL with timeout, size limit, and proper headers.
 
@@ -111,28 +131,48 @@ def extract_text(html: bytes, url: str, output_format: str) -> str:
 
     text = text.strip() if text else ""
 
-    # Markdown link injection: trafilatura sometimes drops links in short
-    # passages. For markdown output, walk the source HTML for <a href> tags
-    # and inject `[text](url)` into the extracted text where the link text
-    # appears without a URL. Only first occurrence per anchor.
-    if output_format == "markdown" and text:
-        soup = BeautifulSoup(html, "html.parser")
-        for a in soup.find_all("a", href=True):
-            href = a["href"]
-            link_text = a.get_text(strip=True)
-            if not link_text or href in text:
-                continue
-            if link_text in text:
-                idx = text.find(link_text)
-                if idx >= 0:
-                    after = text[idx + len(link_text) : idx + len(link_text) + 2]
-                    if not after.startswith("]("):
-                        text = text.replace(link_text, f"[{link_text}]({href})", 1)
+    if output_format != "markdown":
+        return text if text else _fallback_text(html)
 
-    if text:
-        return text
+    if not text:
+        return _fallback_text(html)
 
-    # Fallback: BeautifulSoup text extraction
+    return _inject_missing_links(text, html)
+
+
+def _inject_missing_links(text: str, html: bytes) -> str:
+    """Add `[label](href)` for anchors trafilatura dropped from the output.
+
+    Only injects a label that is currently missing from the text, and only when
+    the match position is outside every existing `[label](url)` / bare URL.
+    Labels shorter than _MIN_INJECT_LEN are never injected: on Wikipedia the
+    navbox anchors carry 1-3 char labels ("R", "e", "AI") that also occur as
+    substrings of already-correct links and URLs, which is exactly how the
+    previous `str.replace` version corrupted 79 link constructs on one page.
+    Pure function (no network) so the guards are unit-testable.
+    """
+    soup = BeautifulSoup(html, "html.parser")
+    spans = _protected_spans(text)
+
+    for a in soup.find_all("a", href=True):
+        href = a["href"]
+        link_text = a.get_text(strip=True)
+        if not link_text or len(link_text) < _MIN_INJECT_LEN or href in text:
+            continue
+        idx = text.find(link_text)
+        if idx < 0 or _in_span(spans, idx):
+            continue
+        after = text[idx + len(link_text) : idx + len(link_text) + 2]
+        if after.startswith("]("):
+            continue
+        text = text[:idx] + f"[{link_text}]({href})" + text[idx + len(link_text) :]
+        spans = _protected_spans(text)
+
+    return text
+
+
+def _fallback_text(html: bytes) -> str:
+    """Plain-text fallback when trafilatura returns nothing."""
     soup = BeautifulSoup(html, "html.parser")
     for tag in soup(["script", "style", "noscript", "iframe"]):
         tag.decompose()
