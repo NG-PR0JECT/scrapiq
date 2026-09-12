@@ -123,6 +123,26 @@ infrastructure. No telemetry, no data leaves your network.
 The HTTP API is in `src/main.py`. The core extraction pipeline is in
 `src/extract.py`. Schemas are in `src/schemas.py`.
 
+## Benchmarks
+
+Measured on 12 live pages against `trafilatura`, `readability-lxml`, `MarkItDown`
+and a raw-HTML baseline. Method, per-page numbers, raw JSON and caveats live in
+[**scrapiq-bench**](https://github.com/NG-PR0JECT/scrapiq-bench):
+
+| | median chars | median ms |
+|---|---:|---:|
+| raw HTML | 119,682 | 75 |
+| trafilatura (the same call Scrapiq makes) | 3,840 | 188 |
+| **Scrapiq (HTTP API)** | **5,158** | **424** |
+| readability-lxml | 2,383 | 168 |
+| MarkItDown | 24,354 | 352 |
+
+Scrapiq runs trafilatura underneath — the ~0.24 s extra median is the round trip
+and the server-side fetch, and it buys back text the bare extractor drops (e.g.
++2,876 chars and +32 links on a forum front page) plus a metadata block and
+schema-constrained JSON in the same response. One of those 12 pages exposed a
+link-corruption bug in the markdown pass, fixed in `7775cca`.
+
 ## Ecosystem
 
 Official client libraries and integrations (all MIT):
