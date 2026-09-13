@@ -125,23 +125,34 @@ The HTTP API is in `src/main.py`. The core extraction pipeline is in
 
 ## Benchmarks
 
-Measured on 12 live pages against `trafilatura`, `readability-lxml`, `MarkItDown`
-and a raw-HTML baseline. Method, per-page numbers, raw JSON and caveats live in
+Measured on 23 live pages (two page sets, two consecutive days) against
+`trafilatura`, `readability-lxml`, `MarkItDown` and a raw-HTML baseline. Method,
+per-page numbers, raw JSON and caveats live in
 [**scrapiq-bench**](https://github.com/NG-PR0JECT/scrapiq-bench):
 
-| | median chars | median ms |
+| | median chars | median ms (cold) |
 |---|---:|---:|
-| raw HTML | 119,682 | 75 |
-| trafilatura (the same call Scrapiq makes) | 3,840 | 188 |
-| **Scrapiq (HTTP API)** | **5,158** | **424** |
-| readability-lxml | 2,383 | 168 |
-| MarkItDown | 24,354 | 352 |
+| raw HTML | 105,845 | 97 |
+| trafilatura (the same call Scrapiq makes) | 4,449 | 253 |
+| **Scrapiq (HTTP API)** | **6,648** | **411** |
+| readability-lxml | 3,814 | 217 |
+| MarkItDown | 17,205 | 414 |
 
-Scrapiq runs trafilatura underneath — the ~0.24 s extra median is the round trip
-and the server-side fetch, and it buys back text the bare extractor drops (e.g.
-+2,876 chars and +32 links on a forum front page) plus a metadata block and
-schema-constrained JSON in the same response. One of those 12 pages exposed a
-link-corruption bug in the markdown pass, fixed in `7775cca`.
+Scrapiq runs trafilatura underneath — the extra ~0.16 s of median latency is the
+round trip and the server-side fetch. What it buys back:
+
+- On **23/23** pages the API returned at least as much text as the bare library
+  called with identical kwargs, and more on 17/23.
+- On a forum front page it recovers **+32 links** the extractor dropped (reproduced
+  on both days, +2,876 and +3,281 chars respectively).
+- On the Apache licence page the bare library call returns **0 characters** with no
+  error, while the API returns 9,354 — its BeautifulSoup fallback fires when the
+  parser comes back empty.
+
+`readability-lxml` returned under 200 characters on 2/23 pages without raising an
+error, and `MarkItDown` carried 4+ boilerplate markers on 4/23 (`8 markers / 58,237
+chars` on one news front vs `0 / 4,068` for Scrapiq). One of the pages in the first
+set exposed a link-corruption bug in Scrapiq's markdown pass, fixed in `7775cca`.
 
 ## Ecosystem
 
