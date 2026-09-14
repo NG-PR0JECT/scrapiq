@@ -145,9 +145,13 @@ round trip and the server-side fetch. What it buys back:
   called with identical kwargs, and more on 17/23.
 - On a forum front page it recovers **+32 links** the extractor dropped (reproduced
   on both days, +2,876 and +3,281 chars respectively).
-- On the Apache licence page the bare library call returns **0 characters** with no
+- On the Apache licence URL the bare library call returns **0 characters** with no
   error, while the API returns 9,354 — its BeautifulSoup fallback fires when the
-  parser comes back empty.
+  parser comes back empty. The cause is the response type, not the parser: that URL
+  is served as `text/plain`, so an HTML extractor cannot read it (the page's
+  `.html` twin extracts fine). Reproduced 2026-09-14 in `scrapiq-bench`
+  (`verify_ct_license.py`): the trap is feeding whatever a server returned into an
+  HTML extractor.
 
 `readability-lxml` returned under 200 characters on 2/23 pages without raising an
 error, and `MarkItDown` carried 4+ boilerplate markers on 4/23 (`8 markers / 58,237
