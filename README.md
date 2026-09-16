@@ -155,7 +155,11 @@ round trip and the server-side fetch. What it buys back:
 
 `readability-lxml` returned under 200 characters on 2/23 pages without raising an
 error, and `MarkItDown` carried 4+ boilerplate markers on 4/23 (`8 markers / 58,237
-chars` on one news front vs `0 / 4,068` for Scrapiq). One of the pages in the first
+chars` on one news front vs `0 / 4,068` for Scrapiq). The same pages were swept the
+next day for the failure that never raises — a 2xx fetch that produces almost no
+text and no exception: over the 23 pages that fetched, Scrapiq returned under 200
+characters **0 times**, `trafilatura` 1 (a `text/plain` licence response) and
+`readability-lxml` 2 (both HTML, both HTTP 200 with real content). One of the pages in the first
 set exposed a link-corruption bug in Scrapiq's markdown pass, fixed in `7775cca`.
 
 ## Ecosystem
