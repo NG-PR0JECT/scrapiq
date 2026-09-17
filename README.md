@@ -166,7 +166,7 @@ set exposed a link-corruption bug in Scrapiq's markdown pass, fixed in `7775cca`
 
 Official client libraries and integrations (all MIT):
 
-- [scrapiq-cli](https://github.com/NG-PR0JECT/scrapiq-cli) — dependency-free CLI (`pip install scrapiq`)
+- [scrapiq-cli](https://github.com/NG-PR0JECT/scrapiq-cli) — dependency-free CLI, not on PyPI yet (`uvx --from git+https://github.com/NG-PR0JECT/scrapiq-cli scrapiq <url>`)
 - [scrapiq-node](https://github.com/NG-PR0JECT/scrapiq-node) — dependency-free TypeScript/Node client
 - [scrapiq-python](https://github.com/NG-PR0JECT/scrapiq-python) — official Python client (sync + async)
 - [scrapiq-langchain-loader](https://github.com/NG-PR0JECT/scrapiq-langchain-loader) — LangChain `DocumentLoader`
